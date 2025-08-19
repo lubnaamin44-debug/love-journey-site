@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="ur" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>محبت کا سفر — Final Version</title>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root{ --txt:#ffffff; }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    display:flex;align-items:center;justify-content:center;min-height:100vh;
+    color:var(--txt);
+    font-family:"Noto Nastaliq Urdu", serif;
+    transition:background 600ms ease;
+    background:#0f0c29;
+  }
+  .theme-intro{ background:linear-gradient(135deg,#0f0c29,#302b63,#24243e) }
+  .theme-mercury{ background:linear-gradient(135deg,#555,#333,#111) }
+  .theme-venus{ background:linear-gradient(135deg,#ffcc80,#ff9966,#cc6600) }
+  .theme-earth{ background:linear-gradient(135deg,#2193b0,#6dd5ed) }
+  .theme-mars{ background:linear-gradient(135deg,#ff512f,#dd2476) }
+  .theme-jupiter{ background:linear-gradient(135deg,#b79891,#94716b) }
+  .theme-saturn{ background:linear-gradient(135deg,#f6d365,#fda085) }
+  .theme-neptune{ background:linear-gradient(135deg,#1e3c72,#2a5298) }
+
+  .wrap{display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center;padding:24px;width:100%}
+  .heart{font-size:68px;cursor:pointer;position:relative;animation:pulse 1.8s infinite;user-select:none;}
+  @keyframes pulse{0%{transform:scale(1)}50%{transform:scale(1.18)}100%{transform:scale(1)}}
+  .heart.sparkle::after{content:"✨";position:absolute;top:-18px;right:-18px;animation:twinkle 1.6s infinite;opacity:.9;font-size:22px;}
+  @keyframes twinkle{0%,100%{opacity:0;transform:scale(.5)}50%{opacity:1;transform:scale(1.2)}}
+  .planet{cursor:pointer;filter:drop-shadow(0 8px 28px rgba(0,0,0,.25));}
+  .msg{
+    font-size:clamp(22px,5vw,44px);
+    font-family:"Noto Nastaliq Urdu", serif;
+    opacity:0;transform:translateY(10px);transition:600ms
+  }
+  .msg.show{opacity:1;transform:translateY(0)}
+  .clicktxt{font-size:16px;opacity:.9;font-family:"Poppins", sans-serif;}
+  .hint{font-size:14px;opacity:.75;font-family:"Poppins", sans-serif;}
+  .hidden{display:none}
+  button.replay{
+    margin-top:8px;padding:10px 18px;font-size:18px;
+    border:none;border-radius:10px;
+    background:#fff;color:#333;cursor:pointer;
+    font-family:"Poppins", sans-serif;
+  }
+  button.replay:hover{background:#eee}
+
+  .planet-name{
+    font-size:24px;font-weight:600;opacity:0;
+    transform:translateY(-10px);transition:all 0.6s;
+    font-family:"Poppins", sans-serif;
+  }
+  .planet-name.show{opacity:1;transform:translateY(0)}
+  .progress{display:flex;gap:6px;justify-content:center;margin-top:14px}
+  .dot{font-size:20px;opacity:.5;transition:all .5s;font-family:"Poppins", sans-serif;}
+  .dot.active{opacity:1;transform:scale(1.3)}
+</style>
+</head>
+<body class="theme-intro">
+
+<!-- Background Music (Soft Loop) -->
+<audio id="bgm" src="https://archive.org/download/07.KalamEneih/07.%20Kalam%20Eneih.mp3" autoplay loop></audio>
+
+  <div class="wrap" id="app">
+    <!-- Intro Step -->
+    <div id="introStep">
+      <div class="heart sparkle" onclick="revealIntro()">❤️</div>
+    </div>
+
+    <div id="introReveal" class="hidden">
+      <div class="msg show">میں تم سے محبت کرتا ہوں</div>
+      <div class="heart sparkle" style="margin-top:8px" onclick="startJourney()">❤️</div>
+      <div class="clicktxt">Click this</div>
+    </div>
+
+    <!-- Planet container -->
+    <div id="planetStep" class="hidden">
+      <div id="planetName" class="planet-name"></div>
+      <div id="planetPic" class="planet" onclick="revealMessage()"></div>
+      <div id="planetMsg" class="msg"></div>
+      <div id="nextCta" class="hidden">
+        <div class="heart sparkle" onclick="gotoNext()">❤️</div>
+        <div class="clicktxt">Click this</div>
+      </div>
+      <div class="hint">تصویر پر کلک کریں</div>
+      <div id="finalReplay" class="hidden">
+        <button class="replay" onclick="replay()">💞 Replay Journey</button>
+      </div>
+      <div id="progressDots" class="progress"></div>
+    </div>
+  </div>
+
+<script>
+  const svgs = {
+    mercury:`<svg width="280" height="280" viewBox="0 0 280 280"><circle cx="140" cy="140" r="120" fill="#999"/></svg>`,
+    venus:`<svg width="280" height="280" viewBox="0 0 280 280"><circle cx="140" cy="140" r="120" fill="#d69a3a"/></svg>`,
+    earth:`<svg width="280" height="280" viewBox="0 0 280 280"><circle cx="140" cy="140" r="120" fill="#2b7bd3"/></svg>`,
+    mars:`<svg width="280" height="280" viewBox="0 0 280 280"><circle cx="140" cy="140" r="120" fill="#c24a29"/></svg>`,
+    jupiter:`<svg width="280" height="280" viewBox="0 0 280 280"><circle cx="140" cy="140" r="120" fill="#b78e6b"/></svg>`,
+    saturn:`<svg width="280" height="280" viewBox="0 0 280 280"><circle cx="140" cy="140" r="110" fill="#d7bf9c"/></svg>`,
+    neptune:`<svg width="280" height="280" viewBox="0 0 280 280"><circle cx="140" cy="140" r="120" fill="#2e6fd4"/></svg>`
+  };
+
+  const steps = [
+    {key:'mercury', name:'Mercury — عطارد', msg:'میرا پہلا اور آخری پیار تم ہو'},
+    {key:'venus',   name:'Venus — زہرہ', msg:'میری روشنی تم سے ہے'},
+    {key:'earth',   name:'Earth — زمین', msg:'تم میری دنیا ہو'},
+    {key:'mars',    name:'Mars — مریخ', msg:'میں ہمیشہ تمہارے ساتھ ہوں'},
+    {key:'jupiter', name:'Jupiter — مشتری', msg:'میری طاقت تم ہو'},
+    {key:'saturn',  name:'Saturn — زحل', msg:'تم میری کائنات کی رونق ہو'},
+    {key:'neptune', name:'Neptune — نیپچون', msg:'میری خاموش گہرائیوں میں بھی تم ہو', final:true}
+  ];
+
+  let idx=-1;
+  function revealIntro(){document.body.className='theme-intro';document.getElementById('introStep').classList.add('hidden');document.getElementById('introReveal').classList.remove('hidden');}
+  function startJourney(){idx=0;loadPlanet(steps[idx]);}
+  function loadPlanet(step){
+    document.body.className='theme-'+step.key;
+    document.getElementById('introReveal').classList.add('hidden');
+    document.getElementById('planetStep').classList.remove('hidden');
+    document.getElementById('planetPic').innerHTML=svgs[step.key];
+    const msgEl=document.getElementById('planetMsg');
+    msgEl.classList.remove('show');msgEl.textContent=step.msg;
+    document.getElementById('nextCta').classList.add('hidden');
+    document.getElementById('finalReplay').classList.toggle('hidden',!step.final);
+    const nameEl=document.getElementById('planetName');
+    nameEl.textContent=step.name;nameEl.classList.remove('show');void nameEl.offsetWidth;nameEl.classList.add('show');
+    updateDots();
+  }
+  function revealMessage(){document.getElementById('planetMsg').classList.add('show');if(!steps[idx].final)document.getElementById('nextCta').classList.remove('hidden');}
+  function gotoNext(){idx++;if(idx<steps.length)loadPlanet(steps[idx]);}
+  function replay(){idx=-1;document.getElementById('planetStep').classList.add('hidden');document.getElementById('introStep').classList.remove('hidden');document.body.className='theme-intro';}
+  function updateDots(){const dots=document.getElementById('progressDots');dots.innerHTML='';steps.forEach((s,i)=>{const d=document.createElement('span');d.className='dot'+(i==idx?' active':'');d.textContent='●';dots.appendChild(d);});}
+</script>
+</body>
+</html>
